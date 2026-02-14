@@ -1,9 +1,11 @@
 package com.sentinel.mobile.ui.components
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ConfirmationNumber
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -12,70 +14,70 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-// ✅ CRITICAL IMPORTS - These resolve the 'Unresolved reference' errors
 import com.sentinel.mobile.models.SupportTicket
-import com.sentinel.mobile.models.TicketStatus
 
 @Composable
-fun TicketItem(ticket: SupportTicket, onClaim: (String) -> Unit) {
+fun TicketItem(
+    ticket: SupportTicket,
+    isAdmin: Boolean, // ✅ Fixed: Added missing parameter
+    onClaim: (String) -> Unit = {} // ✅ Fixed: Added missing parameter
+) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B).copy(alpha = 0.6f)),
-        shape = RoundedCornerShape(16.dp)
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B).copy(alpha = 0.4f)),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                color = Color(0xFF0EA5E9).copy(alpha = 0.1f),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.size(48.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CalendarMonth, null, tint = Color(0xFFEF4444), modifier = Modifier.size(14.dp))
-                    Text(
-                        text = " TICKET #${ticket.id.take(4).uppercase()}",
-                        color = Color.Gray,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Surface(
-                    color = if (ticket.status == TicketStatus.OPEN) Color(0xFF7F1D1D) else Color(0xFF1E3A8A),
-                    shape = RoundedCornerShape(4.dp)
-                ) {
-                    Text(
-                        text = ticket.status.name,
-                        color = if (ticket.status == TicketStatus.OPEN) Color(0xFFF87171) else Color(0xFF93C5FD),
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
+                Icon(
+                    Icons.Default.ConfirmationNumber,
+                    null,
+                    tint = Color(0xFF0EA5E9),
+                    modifier = Modifier.padding(12.dp)
+                )
             }
 
-            Text(
-                text = ticket.subject,
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 12.dp)
-            )
+            Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
+                Text(
+                    text = ticket.subject, // ✅ Fixed: Matches DataModels.kt
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+                Text(
+                    text = "ID: ${ticket.id.take(8)} • ${ticket.priority}",
+                    color = Color.Gray,
+                    fontSize = 12.sp
+                )
+            }
 
-            Text(
-                text = ticket.description,
-                color = Color.Gray,
-                fontSize = 13.sp,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-
-            Button(
-                onClick = { onClaim(ticket.id) },
-                modifier = Modifier.fillMaxWidth().padding(top = 20.dp).height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F172A)),
-                shape = RoundedCornerShape(12.dp)
+            // Status Badge
+            Surface(
+                color = if (ticket.status == "OPEN") Color(0xFF10B981).copy(alpha = 0.1f) else Color.DarkGray,
+                shape = RoundedCornerShape(50),
+                border = BorderStroke(1.dp, if (ticket.status == "OPEN") Color(0xFF10B981) else Color.Gray)
             ) {
-                Text("Process Ticket", color = Color(0xFF38BDF8), fontWeight = FontWeight.Bold)
+                Text(
+                    text = ticket.status,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    color = if (ticket.status == "OPEN") Color(0xFF10B981) else Color.LightGray,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            if (isAdmin && ticket.status == "OPEN") {
+                IconButton(onClick = { onClaim(ticket.id) }) {
+                    Text("CLAIM", color = Color(0xFF0EA5E9), fontSize = 10.sp, fontWeight = FontWeight.Black)
+                }
             }
         }
     }

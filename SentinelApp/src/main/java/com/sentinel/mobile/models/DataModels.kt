@@ -1,95 +1,53 @@
-@file:OptIn(kotlinx.serialization.ExperimentalSerializationApi::class, kotlinx.serialization.InternalSerializationApi::class)
-@file:Suppress("unused")
-
 package com.sentinel.mobile.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/**
- * Global User Roles for the SentinelFlow System.
- */
+// ==================================================================
+// INTERNAL APP MODELS
+// These are the clean data classes your UI and ViewModels will use.
+// ==================================================================
+
 @Serializable
 enum class UserRole {
-    ADMIN,
-    MODERATOR,
-    PREMIUM,
-    MEMBER,
-    USER,
-    GUEST
+    @SerialName("ADMIN") ADMIN,
+    @SerialName("MODERATOR") MODERATOR,
+    @SerialName("PREMIUM") PREMIUM,
+    @SerialName("MEMBER") MEMBER,
+    @SerialName("USER") USER, // Adding USER as a fallback
+    @SerialName("GUEST") GUEST
 }
 
-/**
- * Status Enums for Support Ticket Management.
- */
-@Serializable
-enum class TicketStatus {
-    OPEN,
-    IN_PROGRESS,
-    RESOLVED,
-    CLOSED
-}
-
-/**
- * Transaction Categories for Financial Monitoring.
- */
-@Serializable
-enum class TransactionType {
-    INCOME,
-    EXPENSE,
-    TRANSFER
-}
-
-/**
- * Core Data Class for Private and Neural Messaging.
- */
-@Serializable
-data class ChatMessage(
-    val id: String,
-    val content: String,
-    val timestamp: String,
-    val isFromMe: Boolean,
-    val senderName: String,
-    val senderAvatar: String? = null,
-    val senderRole: UserRole = UserRole.USER
-)
-
-/**
- * Data Model for System Notifications and Audit Alerts.
- */
-@Serializable
-data class Notification(
-    val id: String,
-    val message: String,
-    val timestamp: String
-)
-
-/**
- * Administrative Model for Support Ticket Objects.
- */
-@Serializable
-data class SupportTicket(
-    val id: String,
-    val subject: String,
-    val description: String,
-    val status: TicketStatus,
-    val priority: String,
-    @SerialName("created_at") val createdAt: String
-)
-
-/**
- * Financial Transaction Model for Executive Dashboard.
- */
 @Serializable
 data class Transaction(
     val id: String,
     @SerialName("user_id") val userId: String,
     val amount: Double,
-    val currency: String = "USD",
-    val status: String,
-    @SerialName("transaction_date") val transactionDate: String,
-    @SerialName("merchant_name") val merchantName: String?,
-    val type: TransactionType = TransactionType.EXPENSE,
-    val category: String = "General",
-    @SerialName("risk_score") val riskScore: Double? = 0.0
+    @SerialName("merchant_name") val merchantName: String? = "Sentinel Store",
+    @SerialName("risk_score") val riskScore: Double? = 0.0,
+    @SerialName("transaction_date") val transactionDate: String
+)
+
+@Serializable
+data class SupportTicket(
+    val id: String,
+    val user_id: String,
+    val subject: String,
+    val description: String,
+    val status: String = "OPEN",
+    val priority: String = "MEDIUM",
+    @SerialName("created_at") val createdAt: String
+)
+
+// ✅ CRITICAL FIX: The internal ChatMessage model is now correct.
+// 'senderRole' now uses the correct UserRole enum and 'timestamp' is removed.
+data class ChatMessage(
+    val id: String,
+    val senderId: String,
+    val receiverId: String,
+    val content: String,
+    val createdAt: String, // The single source of truth for time
+    val isFromMe: Boolean,
+    val senderName: String,
+    val senderRole: UserRole // ✅ FIXED: Now uses your local UserRole enum
 )

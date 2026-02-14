@@ -1,5 +1,6 @@
 package com.sentinel.mobile.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
@@ -10,29 +11,30 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sentinel.mobile.models.UserRole // ✅ Corrected Import
+import com.sentinel.mobile.models.UserRole
+import com.sentinel.mobile.models.UserRole.*
 
 @Composable
 fun RoleBadge(role: UserRole) {
-    val (backgroundColor, textColor) = when (role) {
-        UserRole.ADMIN -> Color(0xFF7F1D1D) to Color(0xFFF87171)
-        UserRole.MODERATOR -> Color(0xFF1E3A8A) to Color(0xFF93C5FD)
-        UserRole.PREMIUM -> Color(0xFF3F6212) to Color(0xFFBEF264)
-        UserRole.MEMBER, UserRole.USER -> Color(0xFF1E293B) to Color(0xFF94A3B8)
-        UserRole.GUEST -> Color(0xFF334155) to Color(0xFF64748B)
-        else -> Color(0xFF1E293B) to Color(0xFF94A3B8) // ✅ Exhaustive Check
+    val (color, label) = when (role) {
+        ADMIN -> Color(0xFFF59E0B) to "SYSTEM ADMIN"
+        MODERATOR -> Color(0xFF8B5CF6) to "MODERATOR"
+        PREMIUM -> Color(0xFF10B981) to "PREMIUM"
+        MEMBER -> Color(0xFF64748B) to "MEMBER"
+        USER -> TODO()
+        GUEST -> TODO()
     }
 
     Surface(
-        color = backgroundColor,
+        color = color.copy(alpha = 0.1f),
         shape = RoundedCornerShape(4.dp),
-        modifier = Modifier.padding(horizontal = 4.dp)
+        border = BorderStroke(0.5.dp, color.copy(alpha = 0.5f))
     ) {
         Text(
-            text = role.name,
-            color = textColor,
+            text = label,
+            color = color,
             fontSize = 9.sp,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.Black,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
         )
     }

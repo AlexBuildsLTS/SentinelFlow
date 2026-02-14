@@ -1,9 +1,3 @@
-/**
- * SentinelFlow Executive Settings Engine
- * Implements high-tier security management, AI key vaulting, and identity configuration.
- * Parity with image_d00486.png, image_d004a4.png, and image_d05ed7.png.
- */
-
 package com.sentinel.mobile.ui
 
 import androidx.compose.foundation.*
@@ -25,16 +19,30 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.*
 import coil.compose.AsyncImage
 
+// ✅ This represents the state that a ViewModel would provide
+data class SettingsUiState(
+    val userEmail: String = "admin@sentinel.com",
+    val avatarUrl: String? = null,
+    val userApiKey: String = "",
+    val isSaving: Boolean = false,
+    val isBiometricEnabled: Boolean = true,
+    val is2faEnabled: Boolean = false
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onBack: () -> Unit,
-    userEmail: String = "admin@sentinel.com",
-    avatarUrl: String? = null
+    // ✅ Use a state holder object for cleaner parameters
+    uiState: SettingsUiState,
+    // ✅ Hoist all events out of the screen
+    onApiKeyChanged: (String) -> Unit,
+    onUpdateApiKeyClicked: () -> Unit,
+    onBiometricToggled: (Boolean) -> Unit,
+    on2faToggled: (Boolean) -> Unit,
+    onViewLogsClicked: () -> Unit,
+    onLogoutClicked: () -> Unit,
+    onBack: () -> Unit
 ) {
-    var userApiKey by remember { mutableStateOf("") }
-    var isSaving by remember { mutableStateOf(false) }
-
     Scaffold(
         containerColor = Color(0xFF020617),
         topBar = {
@@ -45,7 +53,8 @@ fun SettingsScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFF020617))
+                // ✅ FIXED: Deprecated colors call
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF020617))
             )
         }
     ) { padding ->
@@ -56,54 +65,23 @@ fun SettingsScreen(
                 .padding(horizontal = 20.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // --- IDENTITY SNAPSHOT MODULE (Matches image_d05ed7.png) ---
+            // --- IDENTITY SNAPSHOT MODULE ---
             Spacer(Modifier.height(16.dp))
-            Surface(
-                color = Color(0xFF1E293B).copy(alpha = 0.4f),
-                shape = RoundedCornerShape(24.dp),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(contentAlignment = Alignment.BottomEnd) {
-                        Surface(
-                            shape = CircleShape,
-                            color = Color(0xFF6366F1),
-                            modifier = Modifier.size(64.dp)
-                        ) {
-                            if (avatarUrl != null) {
-                                AsyncImage(model = avatarUrl, contentDescription = null, modifier = Modifier.clip(CircleShape))
-                            } else {
-                                Icon(Icons.Default.Person, null, tint = Color.White, modifier = Modifier.padding(16.dp))
-                            }
-                        }
-                        Surface(color = Color(0xFF10B981), shape = CircleShape, modifier = Modifier.size(16.dp).border(2.dp, Color(0xFF0F172A), CircleShape)) {}
-                    }
-                    Column(modifier = Modifier.padding(start = 16.dp)) {
-                        Text(userEmail, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text("Senior Audit Admin", color = Color.Gray, fontSize = 13.sp)
-                    }
-                }
-            }
+            IdentitySnapshot(email = uiState.userEmail, avatarUrl = uiState.avatarUrl)
 
             Spacer(Modifier.height(32.dp))
 
-            // --- NEURAL CONFIGURATION MODULE (Your API Key Requirement) ---
+            // --- NEURAL CONFIGURATION MODULE ---
             SettingsSectionHeader("SentinelAI Neural Engine")
             Text(
                 text = "Provide your personal API key. Requests are proxied through an encrypted tunnel for maximum privacy.",
-                color = Color.Gray,
-                fontSize = 12.sp,
-                lineHeight = 18.sp,
+                color = Color.Gray, fontSize = 12.sp, lineHeight = 18.sp,
                 modifier = Modifier.padding(bottom = 16.dp, start = 4.dp)
             )
 
             OutlinedTextField(
-                value = userApiKey,
-                onValueChange = { userApiKey = it },
+                value = uiState.userApiKey,
+                onValueChange = onApiKeyChanged, // ✅ Event hoisted
                 label = { Text("OpenAI / Anthropic Key") },
                 placeholder = { Text("sk-...", color = Color.DarkGray) },
                 modifier = Modifier.fillMaxWidth(),
@@ -114,16 +92,18 @@ fun SettingsScreen(
                     focusedContainerColor = Color(0xFF0F172A),
                     unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
                     focusedBorderColor = Color(0xFF8B5CF6),
-                    focusedTextColor = Color.White
+                    focusedTextColor = Color.White,
+                    unfocusedLabelColor = Color.Gray,
+                    unfocusedTrailingIconColor = Color.Gray
                 ),
                 trailingIcon = {
-                    if (isSaving) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color(0xFF8B5CF6))
-                    else Icon(Icons.Default.VpnKey, null, tint = Color.Gray)
+                    if (uiState.isSaving) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color(0xFF8B5CF6))
+                    else Icon(Icons.Default.VpnKey, null)
                 }
             )
 
             Button(
-                onClick = { /* Implement Encrypted Supabase Save Logic */ },
+                onClick = onUpdateApiKeyClicked, // ✅ Event hoisted
                 modifier = Modifier.padding(top = 12.dp).align(Alignment.End),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6).copy(alpha = 0.2f), contentColor = Color(0xFF8B5CF6)),
                 border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.4f)),
@@ -134,27 +114,34 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            // --- SECURITY HARDENING (Matches image_d004a4.png) ---
+            // --- SECURITY HARDENING ---
             SettingsSectionHeader("Security & Biometrics")
             SettingsToggleCard(
                 title = "Fingerprint Identity",
                 sub = "Require biometric scan for session entry",
                 icon = Icons.Default.Fingerprint,
-                initialState = true
+                checked = uiState.isBiometricEnabled, // ✅ State comes from uiState
+                onCheckedChange = onBiometricToggled   // ✅ Event is hoisted
             )
             SettingsToggleCard(
                 title = "Hardware 2FA",
                 sub = "Yubikey or authenticator verification",
                 icon = Icons.Default.PhonelinkLock,
-                initialState = false
+                checked = uiState.is2faEnabled,     // ✅ State comes from uiState
+                onCheckedChange = on2faToggled       // ✅ Event is hoisted
             )
-            SettingsCard(title = "Local Audit Logs", sub = "Review last 50 encrypted events", icon = Icons.Default.History)
+            SettingsCard(
+                title = "Local Audit Logs",
+                sub = "Review last 50 encrypted events",
+                icon = Icons.Default.History,
+                onClick = onViewLogsClicked // ✅ Event hoisted
+            )
 
             Spacer(Modifier.height(48.dp))
 
             // --- SESSION TERMINATION ---
             Button(
-                onClick = { /* Logout Logic */ },
+                onClick = onLogoutClicked, // ✅ Event hoisted
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444).copy(alpha = 0.1f)),
                 border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.5f)),
@@ -167,65 +154,37 @@ fun SettingsScreen(
     }
 }
 
+// Extracted for clarity
 @Composable
-private fun SettingsSectionHeader(title: String) {
-    Text(
-        text = title.uppercase(),
-        color = Color(0xFF0EA5E9),
-        fontSize = 11.sp,
-        letterSpacing = 1.sp,
-        fontWeight = FontWeight.Black,
-        modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
-    )
-}
-
-@Composable
-private fun SettingsCard(title: String, sub: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B).copy(alpha = 0.4f)),
-        shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
+private fun IdentitySnapshot(email: String, avatarUrl: String?) {
+    Surface(
+        color = Color(0xFF1E293B).copy(alpha = 0.4f),
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(color = Color(0xFF0F172A), shape = RoundedCornerShape(12.dp)) {
-                Icon(icon, null, tint = Color(0xFF0EA5E9), modifier = Modifier.padding(12.dp).size(22.dp))
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(contentAlignment = Alignment.BottomEnd) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color(0xFF6366F1),
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    if (avatarUrl != null) {
+                        AsyncImage(model = avatarUrl, contentDescription = null, modifier = Modifier.clip(CircleShape))
+                    } else {
+                        Icon(Icons.Default.Person, null, tint = Color.White, modifier = Modifier.padding(16.dp))
+                    }
+                }
+                Surface(color = Color(0xFF10B981), shape = CircleShape, modifier = Modifier.size(16.dp).border(2.dp, Color(0xFF0F172A), CircleShape)) {}
             }
-            Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
-                Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                Text(sub, color = Color.Gray, fontSize = 12.sp)
+            Column(modifier = Modifier.padding(start = 16.dp)) {
+                Text(email, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text("Senior Audit Admin", color = Color.Gray, fontSize = 13.sp)
             }
-            Icon(Icons.Default.ChevronRight, null, tint = Color.DarkGray)
-        }
-    }
-}
-
-@Composable
-private fun SettingsToggleCard(title: String, sub: String, icon: androidx.compose.ui.graphics.vector.ImageVector, initialState: Boolean) {
-    var checked by remember { mutableStateOf(initialState) }
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B).copy(alpha = 0.4f)),
-        shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
-    ) {
-        Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(color = Color(0xFF0F172A), shape = RoundedCornerShape(12.dp)) {
-                Icon(icon, null, tint = Color(0xFF0EA5E9), modifier = Modifier.padding(12.dp).size(22.dp))
-            }
-            Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
-                Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                Text(sub, color = Color.Gray, fontSize = 12.sp)
-            }
-            Switch(
-                checked = checked,
-                onCheckedChange = { checked = it },
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color(0xFF0EA5E9),
-                    checkedTrackColor = Color(0xFF0EA5E9).copy(alpha = 0.3f),
-                    uncheckedBorderColor = Color.Transparent
-                )
-            )
         }
     }
 }

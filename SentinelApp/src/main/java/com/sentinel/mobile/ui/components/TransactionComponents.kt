@@ -1,57 +1,77 @@
 package com.sentinel.mobile.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.*
-import com.sentinel.mobile.models.Transaction // ✅ Corrected Import
-import java.util.Locale
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.sentinel.mobile.models.Transaction
+import java.util.*
 
 @Composable
 fun TransactionListItem(transaction: Transaction) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .background(Color(0xFF1E293B).copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        color = Color(0xFF1E293B).copy(alpha = 0.4f),
+        shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Surface(
-            color = Color(0xFF0F172A),
-            shape = CircleShape,
-            modifier = Modifier.size(40.dp)
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                Icons.Default.AccountBalanceWallet,
-                null,
-                tint = Color(0xFF0EA5E9),
-                modifier = Modifier.padding(10.dp)
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Risk Indicator Dot
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .background(
+                            color = if ((transaction.riskScore ?: 0.0) > 0.6) Color(0xFFEF4444) else Color(0xFF10B981),
+                            shape = androidx.compose.foundation.shape.CircleShape
+                        )
+                )
+
+                Spacer(Modifier.width(16.dp))
+
+                Column {
+                    Text(
+                        text = transaction.merchantName ?: "Vault Deposit",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
+                    )
+                    Text(
+                        text = transaction.transactionDate.take(10), // Shows YYYY-MM-DD
+                        color = Color.Gray,
+                        fontSize = 11.sp
+                    )
+                }
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = String.format(Locale.US, "$%.2f", transaction.amount),
+                    color = Color.White,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp
+                )
+                Text(
+                    text = "Risk: ${String.format("%.2f", transaction.riskScore ?: 0.0)}",
+                    color = if ((transaction.riskScore ?: 0.0) > 0.6) Color(0xFFEF4444) else Color.Gray,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
-        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-            Text(
-                text = transaction.merchantName ?: "Unknown Merchant",
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp
-            )
-            Text(text = "Sentinel Pulse", color = Color.Gray, fontSize = 12.sp)
-        }
-        Text(
-            text = "$${String.format(Locale.US, "%.2f", transaction.amount)}", // ✅ Locale Fixed
-            color = Color.White,
-            fontWeight = FontWeight.Black,
-            fontSize = 16.sp
-        )
     }
 }

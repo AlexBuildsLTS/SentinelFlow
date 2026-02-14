@@ -2,11 +2,15 @@ package com.sentinel.mobile.ui
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.navigation.compose.*
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
+import androidx.navigation.compose.*
+import androidx.navigation.navArgument
 import kotlinx.coroutines.launch
+import com.sentinel.mobile.auth.SessionManager
 import com.sentinel.mobile.viewmodel.LiveMonitorViewModel
-import com.sentinel.mobile.models.*
 import com.sentinel.mobile.ui.components.SentinelSidebar
 
 @Composable
@@ -14,8 +18,10 @@ fun SentinelAppRoot() {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
 
-    // Initialize the ViewModel for real-time data
+    val startDestination = if (sessionManager.getToken() != null) "dashboard" else "login"
     val liveMonitorViewModel: LiveMonitorViewModel = viewModel()
 
     ModalNavigationDrawer(
@@ -27,35 +33,25 @@ fun SentinelAppRoot() {
                     scope.launch { drawerState.close() }
                 },
                 onLogout = {
+                    sessionManager.clearSession()
                     navController.navigate("login") { popUpTo(0) { inclusive = true } }
-                    scope.launch { drawerState.close() }
                 }
             )
         }
     ) {
-        NavHost(navController = navController, startDestination = "login") {
-
-            // 1. Authentication Layer
+        NavHost(navController = navController, startDestination = startDestination) {
             composable("login") {
                 LoginScreen(
-                    onLoginSuccess = {
-                        navController.navigate("dashboard") { popUpTo("login") { inclusive = true } }
-                    },
-                    onNavigateToRegister = { navController.navigate("register") },
-                    onForgotPassword = { /* Todo: Reset Logic */ }
+                    onLoginSuccess = { navController.navigate("dashboard") { popUpTo("login") { inclusive = true } } },
+                    onNavigateToRegister = { navController.navigate("register") }
                 )
             }
-
             composable("register") {
                 RegisterScreen(
-                    onRegisterSuccess = {
-                        navController.navigate("dashboard") { popUpTo("register") { inclusive = true } }
-                    },
+                    onRegisterSuccess = { navController.navigate("dashboard") { popUpTo(0) } },
                     onNavigateToLogin = { navController.popBackStack() }
                 )
             }
-
-            // 2. Core Dashboard Layer
             composable("dashboard") {
                 DashboardScreen(
                     viewModel = liveMonitorViewModel,
@@ -63,28 +59,33 @@ fun SentinelAppRoot() {
                     onNavigateToAI = { navController.navigate("ai_assistant") },
                     onNavigateToSupport = { navController.navigate("support") },
                     onNavigateToSettings = { navController.navigate("settings") },
-                    onLogout = { navController.navigate("login") { popUpTo(0) } }
+                    onLogout = { sessionManager.clearSession(); navController.navigate("login") { popUpTo(0) } }
                 )
             }
-
-            // 3. Feature Modules
-            composable("ai_assistant") {
-                SentinelAIScreen(onBack = { navController.popBackStack() })
-            }
-
+            composable("ai_assistant") { SentinelAIScreen(onBack = { navController.popBackStack() }) }
             composable("settings") {
-                SettingsScreen(onBack = { navController.popBackStack() })
-            }
-
-            composable("support") {
-                SupportTicketScreen(
-                    currentUserRole = UserRole.ADMIN,
+                SettingsScreen(
+                    uiState = SettingsUiState(userEmail = sessionManager.getUserId() ?: "User"),
                     onBack = { navController.popBackStack() },
-                    tickets = listOf(
-                        SupportTicket("1", "Login Issue", "Session lock", TicketStatus.OPEN, "URGENT", "10:00 AM"),
-                        SupportTicket("2", "Terminal Error", "Transaction failed", TicketStatus.IN_PROGRESS, "HIGH", "11:30 AM")
-                    )
+                    onApiKeyChanged = {}, onUpdateApiKeyClicked = {},
+                    onBiometricToggled = {}, on2faToggled = {}, onViewLogsClicked = {},
+                    onLogoutClicked = { sessionManager.clearSession(); navController.navigate("login") { popUpTo(0) } }
                 )
+            }
+            composable("support") {
+                // ✅ tickets parameter now uses a standard List to match SupportTicketScreen
+                SupportTicketScreen(
+                    tickets = emptyList(),
+                    currentUserRole = com.sentinel.mobile.models.UserRole.ADMIN,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(
+                route = "chat/{partnerId}",
+                arguments = listOf(navArgument("partnerId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val partnerId = backStackEntry.arguments?.getString("partnerId") ?: ""
+                PrivateMessagesScreen(recipientName = "Agent", partnerId = partnerId, onBack = { navController.popBackStack() })
             }
         }
     }

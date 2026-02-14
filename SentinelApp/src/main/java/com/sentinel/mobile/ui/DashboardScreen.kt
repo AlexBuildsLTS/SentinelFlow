@@ -2,10 +2,11 @@ package com.sentinel.mobile.ui
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +20,8 @@ import com.sentinel.mobile.ui.components.MainHeader
 import com.sentinel.mobile.ui.components.TransactionListItem
 import com.sentinel.mobile.ui.components.SentinelTrendChart
 import com.sentinel.mobile.ui.components.NewTransactionDialog
+import java.text.NumberFormat
+import java.util.Locale
 
 @Composable
 fun DashboardScreen(
@@ -30,7 +33,12 @@ fun DashboardScreen(
     onLogout: () -> Unit
 ) {
     val transactions by viewModel.transactions.collectAsState()
-    var showNewTransactionDialog by remember { mutableStateOf(false) }
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    // Dynamic Calculations
+    val totalVolume = remember(transactions) { transactions.sumOf { it.amount } }
+    val avgRisk = remember(transactions) { viewModel.getAverageRiskScore() }
+    val formattedVolume = NumberFormat.getCurrencyInstance(Locale.US).format(totalVolume)
 
     Scaffold(
         containerColor = Color(0xFF020617),
@@ -40,26 +48,9 @@ fun DashboardScreen(
                 avatarUrl = null,
                 onOpenMenu = onOpenMenu,
                 onNavigate = { route ->
-                    when(route) {
-                        "settings" -> onNavigateToSettings()
-                        "support" -> onNavigateToSupport()
-                        "ai_assistant" -> onNavigateToAI()
-                        "logout" -> onLogout() // ✅ USED: Logout logic integrated
-                    }
+                    if (route == "settings") onNavigateToSettings()
                 }
             )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showNewTransactionDialog = true },
-                containerColor = Color(0xFF0284C7),
-                contentColor = Color.White,
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Icon(Icons.Default.Add, "New")
-                Spacer(Modifier.width(8.dp))
-                Text("New Transaction", fontWeight = FontWeight.ExtraBold)
-            }
         }
     ) { padding ->
         Column(
@@ -70,25 +61,21 @@ fun DashboardScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                "Financial Overview",
+                "Executive Overview",
                 color = Color.White,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(top = 16.dp)
-            )
-            Text(
-                "Real-time monitoring of corporate expenditure.",
-                color = Color.Gray,
-                fontSize = 14.sp
+                modifier = Modifier.padding(top = 24.dp)
             )
 
             Spacer(Modifier.height(24.dp))
 
+            // Main Volume Card
             StatCard(
-                label = "Total Volume",
-                value = "$38,304.97",
-                trend = "12.5%",
-                chartData = listOf(10f, 40f, 25f, 50f, 45f, 70f),
+                label = "Total Vault Volume",
+                value = formattedVolume,
+                trend = if (isLoading) "SYNCING..." else "SECURE",
+                chartData = listOf(20f, 50f, 30f, 80f, 60f, 90f),
                 isPositive = true
             )
 
@@ -97,21 +84,21 @@ fun DashboardScreen(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(modifier = Modifier.weight(1f)) {
                     StatCard(
-                        label = "Transactions",
-                        value = "${transactions.size}", // ✅ DYNAMIC: Reads from state
-                        trend = "8.2%",
-                        chartData = listOf(20f, 30f, 25f, 40f),
+                        label = "Audit Events",
+                        value = "${transactions.size}",
+                        trend = "LIVE",
+                        chartData = listOf(10f, 20f, 15f, 40f),
                         isPositive = true,
                         compact = true
                     )
                 }
                 Box(modifier = Modifier.weight(1f)) {
                     StatCard(
-                        label = "Avg Risk",
-                        value = "0.04",
-                        trend = "2.4%",
-                        chartData = listOf(50f, 40f, 45f, 30f),
-                        isPositive = false,
+                        label = "Risk Index",
+                        value = String.format("%.2f", avgRisk),
+                        trend = "INDEX",
+                        chartData = listOf(80f, 70f, 75f, 60f),
+                        isPositive = avgRisk < 0.4,
                         compact = true
                     )
                 }
@@ -119,26 +106,22 @@ fun DashboardScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            Text("Recent Activity", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text("Live audit stream active.", color = Color.Gray, fontSize = 12.sp)
+            Text("Encrypted Transaction Stream", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(16.dp))
 
-            transactions.forEach { tx ->
-                TransactionListItem(tx)
-            }
-
-            if (transactions.isEmpty()) {
-                Box(modifier = Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
-                    Text("No transactions found in current session.", color = Color.Gray)
+            if (transactions.isEmpty() && !isLoading) {
+                Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                    Text("No data found in Supabase", color = Color.DarkGray)
+                }
+            } else {
+                transactions.forEach { tx ->
+                    TransactionListItem(tx)
+                    Spacer(Modifier.height(10.dp))
                 }
             }
 
             Spacer(Modifier.height(100.dp))
         }
-    }
-
-    if (showNewTransactionDialog) {
-        NewTransactionDialog(onDismiss = { showNewTransactionDialog = false })
     }
 }
 
@@ -152,34 +135,19 @@ private fun StatCard(
     compact: Boolean = false
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(20.dp)),
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B).copy(alpha = 0.4f)),
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(label, color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                Surface(
-                    color = (if (isPositive) Color(0xFF10B981) else Color(0xFFEF4444)).copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(50)
-                ) {
-                    Text(
-                        text = "${if (isPositive) "↗" else "↘"} $trend",
-                        color = if (isPositive) Color(0xFF10B981) else Color(0xFFEF4444),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-            }
-            Text(value, color = Color.White, fontSize = if (compact) 24.sp else 32.sp, fontWeight = FontWeight.Black)
+            Text(label, color = Color.Gray, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            Text(value, color = Color.White, fontSize = if (compact) 24.sp else 34.sp, fontWeight = FontWeight.Black)
             Spacer(Modifier.height(12.dp))
             SentinelTrendChart(
                 dataPoints = chartData,
                 lineColor = if (isPositive) Color(0xFF10B981) else Color(0xFFEF4444),
-                modifier = Modifier.fillMaxWidth().height(if (compact) 40.dp else 60.dp)
+                modifier = Modifier.fillMaxWidth().height(if (compact) 30.dp else 60.dp)
             )
         }
     }

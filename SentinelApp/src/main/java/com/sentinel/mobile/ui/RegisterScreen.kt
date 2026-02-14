@@ -1,12 +1,5 @@
-/**
- * SentinelFlow Registration Module
- * Implements high-tier glassmorphism UI based on SentyCreeateAccount.png.
- * Includes integrated real-time password strength validation.
- */
-
 package com.sentinel.mobile.ui
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,20 +9,34 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.*
+import com.sentinel.mobile.api.ApiClient
+import com.sentinel.mobile.api.SignUpRequest
+import com.sentinel.mobile.auth.SessionManager
 import com.sentinel.mobile.ui.components.PasswordStrengthMeter
+import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val sessionManager = remember { SessionManager(context) }
+
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var passwordVisible by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -49,7 +56,7 @@ fun RegisterScreen(
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Branded Shield Header
+                // Header
                 Surface(
                     color = Color(0xFF0EA5E9),
                     shape = RoundedCornerShape(14.dp),
@@ -61,7 +68,18 @@ fun RegisterScreen(
                 Text("SentinelFlow", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 16.dp))
                 Text("Secure Audit Environment", color = Color.Gray, fontSize = 13.sp)
 
-                // Navigation Tabs (Sign In / Create Account)
+                // Error Feedback
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage!!,
+                        color = Color(0xFFEF4444),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 12.dp)
+                    )
+                }
+
+                // Toggle Tabs
                 Row(
                     modifier = Modifier
                         .padding(vertical = 24.dp)
@@ -81,7 +99,7 @@ fun RegisterScreen(
                     }
                 }
 
-                // Input Section
+                // Inputs
                 RegisterField(value = name, onValueChange = { name = it }, label = "Full Name", icon = Icons.Default.Person)
                 Spacer(Modifier.height(12.dp))
                 RegisterField(value = email, onValueChange = { email = it }, label = "Email Identity", icon = Icons.Default.Email)
@@ -92,10 +110,11 @@ fun RegisterScreen(
                     onValueChange = { password = it },
                     label = "Secure Password",
                     icon = Icons.Default.Lock,
-                    isPassword = true
+                    isPassword = true,
+                    isVisible = passwordVisible,
+                    onToggleVisibility = { passwordVisible = !passwordVisible }
                 )
 
-                // Real-time Strength Meter Module
                 PasswordStrengthMeter(password = password)
 
                 Spacer(Modifier.height(12.dp))
@@ -104,30 +123,67 @@ fun RegisterScreen(
                     onValueChange = { confirmPassword = it },
                     label = "Verify Password",
                     icon = Icons.Default.Key,
-                    isPassword = true
+                    isPassword = true,
+                    isVisible = passwordVisible,
+                    onToggleVisibility = { passwordVisible = !passwordVisible }
                 )
 
-                // Registration Action
+                // Register Action
                 Button(
-                    onClick = onRegisterSuccess,
+                    onClick = {
+                        if (name.isBlank() || email.isBlank() || password.isBlank()) {
+                            errorMessage = "All fields required."
+                            return@Button
+                        }
+                        if (password != confirmPassword) {
+                            errorMessage = "Passwords do not match."
+                            return@Button
+                        }
+
+                        isLoading = true
+                        scope.launch {
+                            try {
+                                val request = SignUpRequest(
+                                    email = email,
+                                    password = password,
+                                    data = mapOf("full_name" to name)
+                                )
+                                val response = ApiClient.service.signUp(request = request)
+
+                                if (response.isSuccessful && response.body() != null) {
+                                    val authData = response.body()!!
+                                    // Auto-Login / Save Session
+                                    if (authData.accessToken != null) {
+                                        sessionManager.saveSession(authData.accessToken, authData.user.id)
+                                        onRegisterSuccess()
+                                    } else {
+                                        // Sometimes Supabase requires email verification first
+                                        errorMessage = "Account created. Please verify your email."
+                                    }
+                                } else {
+                                    errorMessage = "Registration Failed: ${response.message()}"
+                                }
+                            } catch (e: Exception) {
+                                errorMessage = "Network Error: ${e.message}"
+                            } finally {
+                                isLoading = false
+                            }
+                        }
+                    },
+                    enabled = !isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 28.dp)
                         .height(56.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Initialize Account", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Icon(Icons.Default.ChevronRight, null, modifier = Modifier.padding(start = 8.dp))
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    } else {
+                        Text("Initialize Account", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
-
-                Text(
-                    "Protected by SentinelFlow Encryption",
-                    color = Color.Gray.copy(alpha = 0.6f),
-                    fontSize = 11.sp,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
             }
         }
     }
@@ -139,14 +195,27 @@ private fun RegisterField(
     onValueChange: (String) -> Unit,
     label: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    isPassword: Boolean = false
+    isPassword: Boolean = false,
+    isVisible: Boolean = true,
+    onToggleVisibility: () -> Unit = {}
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         placeholder = { Text(label, color = Color.Gray, fontSize = 14.sp) },
         leadingIcon = { Icon(icon, null, tint = Color.Gray, modifier = Modifier.size(20.dp)) },
-        visualTransformation = if (isPassword) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
+        trailingIcon = if (isPassword) {
+            {
+                IconButton(onClick = onToggleVisibility) {
+                    Icon(
+                        if (isVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        null,
+                        tint = Color.Gray
+                    )
+                }
+            }
+        } else null,
+        visualTransformation = if (isPassword && !isVisible) PasswordVisualTransformation() else VisualTransformation.None,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(

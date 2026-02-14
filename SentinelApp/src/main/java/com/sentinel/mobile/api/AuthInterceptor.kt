@@ -8,7 +8,7 @@ class AuthInterceptor(private val sessionManager: SessionManager) : Interceptor 
     override fun intercept(chain: Interceptor.Chain): Response {
         val token = sessionManager.getToken()
         val request = chain.request().newBuilder()
-            .addHeader("apikey", SupabaseConfig.API_KEY) // From your Supabase Dashboard
+            .addHeader("apikey", value = SupabaseConfig.API_KEY) // From your Supabase Dashboard
             .apply {
                 if (token != null) {
                     addHeader("Authorization", "Bearer $token")
