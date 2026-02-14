@@ -6,14 +6,10 @@ pluginManagement {
     }
 }
 
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-    }
+plugins {
+    // This plugin allows Gradle to auto-download JDK 17 since you don't have it installed
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
 }
 
-rootProject.name = "sentinelflow"
-// ✅ CHANGE THIS FROM ":app" TO ":SentinelApp"
+rootProject.name = "SentinelFlow"
 include(":SentinelApp")

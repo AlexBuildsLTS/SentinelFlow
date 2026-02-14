@@ -1,28 +1,30 @@
+/**
+ * SentinelFlow Authentication Interface
+ * Implements Tier-1 glassmorphism based on production design specs.
+ * Matches logins.png and image_d0791e.png precisely.
+ */
+
 package com.sentinel.mobile.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.*
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.*
 
 @Composable
-fun LoginScreen(onLoginSuccess: () -> Unit) {
+fun LoginScreen(
+    onLoginSuccess: () -> Unit,
+    onNavigateToRegister: () -> Unit,
+    onForgotPassword: () -> Unit
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -30,86 +32,121 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFF1E1B4B), Color(0xFF0F172A), Color(0xFF020617))
-                )
-            ),
+            .background(Brush.verticalGradient(listOf(Color(0xFF1E1B4B), Color(0xFF020617)))),
         contentAlignment = Alignment.Center
     ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(24.dp)),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B).copy(alpha = 0.7f)),
-            shape = RoundedCornerShape(24.dp)
+                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(28.dp)),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B).copy(alpha = 0.7f))
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    imageVector = Icons.Default.Lock,
-                    contentDescription = null,
-                    tint = Color(0xFF0EA5E9),
-                    modifier = Modifier.size(48.dp)
-                )
+                // Branded Shield Header
+                Surface(
+                    color = Color(0xFF0EA5E9).copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, Color(0xFF0EA5E9)),
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Icon(Icons.Default.Shield, null, tint = Color(0xFF0EA5E9), modifier = Modifier.padding(16.dp))
+                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Text("SentinelFlow", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
+                Text("Secure Audit Environment", color = Color.Gray, fontSize = 14.sp)
 
-                Text("SentinelFlow", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("Secure Audit Environment", fontSize = 14.sp, color = Color.Gray)
+                // Navigation Switcher (Sign In Active)
+                Row(
+                    modifier = Modifier
+                        .padding(vertical = 32.dp)
+                        .background(Color(0xFF0F172A), RoundedCornerShape(12.dp))
+                        .padding(4.dp)
+                ) {
+                    Button(
+                        onClick = {},
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
+                    ) { Text("Sign In") }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                    TextButton(
+                        onClick = onNavigateToRegister,
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Create Account", color = Color.Gray) }
+                }
 
-                // Email Input
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    leadingIcon = { Icon(Icons.Default.Email, null, tint = Color.Gray) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.Gray,
-                        focusedBorderColor = Color(0xFF0EA5E9),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Password Input
-                OutlinedTextField(
+                // Input Section
+                AuthField(value = email, onValueChange = { email = it }, label = "Email Identity", icon = Icons.Default.Email)
+                Spacer(Modifier.height(16.dp))
+                AuthField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Password") },
-                    leadingIcon = { Icon(Icons.Default.Lock, null, tint = Color.Gray) },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, null, tint = Color.Gray)
-                        }
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.Gray,
-                        focusedBorderColor = Color(0xFF0EA5E9),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                    label = "Password",
+                    icon = Icons.Default.Lock,
+                    isPassword = true,
+                    passwordVisible = passwordVisible,
+                    onToggleVisibility = { passwordVisible = !passwordVisible }
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                TextButton(
+                    onClick = onForgotPassword,
+                    modifier = Modifier.align(Alignment.End).padding(top = 8.dp)
+                ) {
+                    Text("Recover Identity?", color = Color(0xFF0EA5E9), fontSize = 12.sp)
+                }
 
                 Button(
                     onClick = onLoginSuccess,
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 32.dp)
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Sign In", fontWeight = FontWeight.Bold)
+                    Text("Sign In", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.ChevronRight, null, modifier = Modifier.padding(start = 8.dp))
                 }
             }
         }
     }
+}
+
+@Composable
+private fun AuthField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isPassword: Boolean = false,
+    passwordVisible: Boolean = false,
+    onToggleVisibility: () -> Unit = {}
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        placeholder = { Text(label, color = Color.Gray) },
+        leadingIcon = { Icon(icon, null, tint = Color.Gray, modifier = Modifier.size(20.dp)) },
+        visualTransformation = if (isPassword && !passwordVisible) androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
+        trailingIcon = {
+            if (isPassword) {
+                IconButton(onClick = onToggleVisibility) {
+                    Icon(if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, null, tint = Color.Gray)
+                }
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = Color(0xFF0EA5E9),
+            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+            unfocusedContainerColor = Color(0xFF0F172A),
+            focusedContainerColor = Color(0xFF0F172A),
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White
+        )
+    )
 }

@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_chat_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_thinking: boolean | null
+          prompt: string
+          response: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_thinking?: boolean | null
+          prompt: string
+          response?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_thinking?: boolean | null
+          prompt?: string
+          response?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_insights: {
+        Row: {
+          content: string
+          context_type: string
+          created_at: string | null
+          id: string
+          is_dismissed: boolean | null
+          related_transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          context_type: string
+          created_at?: string | null
+          id?: string
+          is_dismissed?: boolean | null
+          related_transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          context_type?: string
+          created_at?: string | null
+          id?: string
+          is_dismissed?: boolean | null
+          related_transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_insights_related_transaction_id_fkey"
+            columns: ["related_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_insights_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: Database["public"]["Enums"]["audit_action"]
@@ -55,6 +135,35 @@ export type Database = {
           {
             foreignKeyName: "audit_logs_actor_id_fkey"
             columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auth_events: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auth_events_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -212,8 +321,10 @@ export type Database = {
           attachment_url: string | null
           content: string
           created_at: string | null
+          encryption_iv: string | null
           id: string
           is_encrypted: boolean | null
+          key_tag: string | null
           receiver_id: string
           reply_to_id: string | null
           sender_id: string
@@ -222,8 +333,10 @@ export type Database = {
           attachment_url?: string | null
           content: string
           created_at?: string | null
+          encryption_iv?: string | null
           id?: string
           is_encrypted?: boolean | null
+          key_tag?: string | null
           receiver_id: string
           reply_to_id?: string | null
           sender_id: string
@@ -232,8 +345,10 @@ export type Database = {
           attachment_url?: string | null
           content?: string
           created_at?: string | null
+          encryption_iv?: string | null
           id?: string
           is_encrypted?: boolean | null
+          key_tag?: string | null
           receiver_id?: string
           reply_to_id?: string | null
           sender_id?: string
@@ -256,6 +371,108 @@ export type Database = {
           {
             foreignKeyName: "chat_messages_sender_id_fkey"
             columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      config_audits: {
+        Row: {
+          created_at: string | null
+          id: string
+          setting_key: string
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          setting_key: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          setting_key?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "config_audits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          action_link: string | null
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_link?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          action_link?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      password_reset_logs: {
+        Row: {
+          id: string
+          ip_address: unknown
+          requested_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          ip_address?: unknown
+          requested_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          ip_address?: unknown
+          requested_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "password_reset_logs_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -423,6 +640,7 @@ export type Database = {
       }
       transactions: {
         Row: {
+          ai_category_prediction: string | null
           amount: number
           category_id: string | null
           created_at: string | null
@@ -432,10 +650,13 @@ export type Database = {
           exchange_rate: number | null
           id: string
           is_recurring: boolean | null
+          location: string | null
           merchant_name: string | null
           notes: string | null
+          processed_at: string | null
           receipt_url: string | null
           recurring_frequency: string | null
+          risk_score: number | null
           status: Database["public"]["Enums"]["transaction_status"]
           transaction_date: string
           type: Database["public"]["Enums"]["transaction_type"]
@@ -443,6 +664,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_category_prediction?: string | null
           amount: number
           category_id?: string | null
           created_at?: string | null
@@ -452,10 +674,13 @@ export type Database = {
           exchange_rate?: number | null
           id?: string
           is_recurring?: boolean | null
+          location?: string | null
           merchant_name?: string | null
           notes?: string | null
+          processed_at?: string | null
           receipt_url?: string | null
           recurring_frequency?: string | null
+          risk_score?: number | null
           status?: Database["public"]["Enums"]["transaction_status"]
           transaction_date: string
           type?: Database["public"]["Enums"]["transaction_type"]
@@ -463,6 +688,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_category_prediction?: string | null
           amount?: number
           category_id?: string | null
           created_at?: string | null
@@ -472,10 +698,13 @@ export type Database = {
           exchange_rate?: number | null
           id?: string
           is_recurring?: boolean | null
+          location?: string | null
           merchant_name?: string | null
           notes?: string | null
+          processed_at?: string | null
           receipt_url?: string | null
           recurring_frequency?: string | null
+          risk_score?: number | null
           status?: Database["public"]["Enums"]["transaction_status"]
           transaction_date?: string
           type?: Database["public"]["Enums"]["transaction_type"]
@@ -501,50 +730,77 @@ export type Database = {
       }
       users: {
         Row: {
+          ai_provider: string | null
           avatar_url: string | null
+          biometric_enabled: boolean | null
           created_at: string | null
           deleted_at: string | null
           email: string
+          encrypted_ai_key: string | null
           failed_login_attempts: number | null
           full_name: string | null
           id: string
+          last_active_at: string | null
           last_login_at: string | null
+          local_ai_key_hash: string | null
           password_hash: string
+          phone_number: string | null
+          recovery_email: string | null
           requires_2fa: boolean | null
           role: Database["public"]["Enums"]["user_role"]
+          settings: Json | null
           status: Database["public"]["Enums"]["account_status"]
+          two_factor_enabled: boolean | null
           updated_at: string | null
           username: string
         }
         Insert: {
+          ai_provider?: string | null
           avatar_url?: string | null
+          biometric_enabled?: boolean | null
           created_at?: string | null
           deleted_at?: string | null
           email: string
+          encrypted_ai_key?: string | null
           failed_login_attempts?: number | null
           full_name?: string | null
           id?: string
+          last_active_at?: string | null
           last_login_at?: string | null
+          local_ai_key_hash?: string | null
           password_hash: string
+          phone_number?: string | null
+          recovery_email?: string | null
           requires_2fa?: boolean | null
           role?: Database["public"]["Enums"]["user_role"]
+          settings?: Json | null
           status?: Database["public"]["Enums"]["account_status"]
+          two_factor_enabled?: boolean | null
           updated_at?: string | null
           username: string
         }
         Update: {
+          ai_provider?: string | null
           avatar_url?: string | null
+          biometric_enabled?: boolean | null
           created_at?: string | null
           deleted_at?: string | null
           email?: string
+          encrypted_ai_key?: string | null
           failed_login_attempts?: number | null
           full_name?: string | null
           id?: string
+          last_active_at?: string | null
           last_login_at?: string | null
+          local_ai_key_hash?: string | null
           password_hash?: string
+          phone_number?: string | null
+          recovery_email?: string | null
           requires_2fa?: boolean | null
           role?: Database["public"]["Enums"]["user_role"]
+          settings?: Json | null
           status?: Database["public"]["Enums"]["account_status"]
+          two_factor_enabled?: boolean | null
           updated_at?: string | null
           username?: string
         }

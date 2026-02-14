@@ -12,7 +12,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.3.0" apply false
 
     // Backend / Spring Boot Plugins
-    id("org.springframework.boot") version "3.4.0" // ⚡ Upgraded for Kotlin 2.3.0 synergy
+    id("org.springframework.boot") version "4.0.2" // ⚡ Upgraded for Kotlin 2.3.0 synergy
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("jvm") version "2.3.0"
     kotlin("plugin.spring") version "2.3.0"
@@ -33,7 +33,15 @@ java {
 }
 
 // ==================================================================
-// 3. BACKEND DEPENDENCIES (SPRING BOOT)
+// 3. REPOSITORIES
+// ==================================================================
+repositories {
+    mavenCentral()
+    google()
+}
+
+// ==================================================================
+// 4. BACKEND DEPENDENCIES (SPRING BOOT)
 // ==================================================================
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")

@@ -6,12 +6,15 @@ import okhttp3.Response
 
 class AuthInterceptor(private val sessionManager: SessionManager) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
-        val requestBuilder = chain.request().newBuilder()
-
-        sessionManager.getToken()?.let { token ->
-            requestBuilder.addHeader("Authorization", "Bearer $token")
-        }
-
-        return chain.proceed(requestBuilder.build())
+        val token = sessionManager.getToken()
+        val request = chain.request().newBuilder()
+            .addHeader("apikey", SupabaseConfig.API_KEY) // From your Supabase Dashboard
+            .apply {
+                if (token != null) {
+                    addHeader("Authorization", "Bearer $token")
+                }
+            }
+            .build()
+        return chain.proceed(request)
     }
 }

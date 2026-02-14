@@ -18,6 +18,8 @@ secret.properties
 key.properties
 *.jks
 *.keystore
+*.keystore.properties
+*.proguard-rules.pro
 
 # --- ANDROID (SentinelApp) ---
 # Build output
@@ -34,6 +36,7 @@ build/
 /SentinelApp/*.iml
 /SentinelApp/.navigation/
 /SentinelApp/captures/
+
 
 # Google Services (Safety check)
 google-services.json

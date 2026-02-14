@@ -1,48 +1,71 @@
 package com.sentinel.mobile.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage // ✅ Now resolves
 import com.sentinel.mobile.models.ChatMessage
 
+/**
+ * Standard UI component for displaying individual chat messages.
+ * Synchronized with the UnifiedChatBubble logic in your main screens.
+ */
 @Composable
-fun ChatBubble(message: ChatMessage) {
-    val isFromMe = message.isFromMe
+fun UnifiedChatBubble(message: ChatMessage) {
+    // Determine alignment and bubble color based on sender identity
+    val alignment = if (message.isFromMe) Alignment.CenterEnd else Alignment.CenterStart
+    val bubbleColor = if (message.isFromMe) Color(0xFF0284C7) else Color(0xFF1E293B)
 
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(8.dp),
-        horizontalArrangement = if (isFromMe) Arrangement.End else Arrangement.Start
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        contentAlignment = alignment
     ) {
-        if (!isFromMe) {
-            AsyncImage(
-                model = message.senderAvatar,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp).clip(CircleShape)
+        Surface(
+            color = bubbleColor,
+            shape = RoundedCornerShape(
+                topStart = 16.dp,
+                topEnd = 16.dp,
+                bottomStart = if (message.isFromMe) 16.dp else 2.dp,
+                bottomEnd = if (message.isFromMe) 2.dp else 16.dp
             )
-            Spacer(Modifier.width(8.dp))
-        }
-
-        Column(horizontalAlignment = if (isFromMe) Alignment.End else Alignment.Start) {
-            Text(text = message.senderName, fontSize = 12.sp, color = Color.Gray)
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = if (isFromMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer
-            ) {
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                // Main text content of the message
                 Text(
                     text = message.content,
-                    modifier = Modifier.padding(12.dp),
-                    color = if (isFromMe) Color.White else Color.Black
+                    color = Color.White,
+                    fontSize = 14.sp
+                )
+
+                // Timestamp aligned to the bottom-right of the bubble
+                Text(
+                    text = message.timestamp,
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontSize = 10.sp,
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(top = 4.dp)
                 )
             }
-            Text(text = message.timestamp, fontSize = 10.sp, color = Color.LightGray)
         }
     }
+}
+
+/**
+ * Legacy alias for UnifiedChatBubble to ensure backward compatibility
+ * with existing PrivateMessagesScreen code.
+ */
+@Composable
+fun ChatBubble(message: ChatMessage) {
+    UnifiedChatBubble(message = message)
 }
